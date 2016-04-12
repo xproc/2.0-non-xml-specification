@@ -483,53 +483,116 @@ the <varname>$result</varname> output.
 </calloutlist>
 </section>
 
+<section>
+  <title>Documents and Ports</title>
+  <section>
+    <title>Documents</title>
+    <para>Documents are sequences of bytes, characters, and other data whose interpretation depends
+        on their associated metadata.  A processor is able to recognize and optimize representations
+        of various types of documents it recognizes but must be able to process any document for
+        which it has received, at minimum, a sequence of bytes.</para>
+      <para>A document has a set of metadata name/value pairs.  In amongst this metadata is the
+        Content Type metadata value that contains a media type value.  This value is used by the
+        processor to recognize the type of data it is processing.</para>
+      <para>The representation of various content types is implementation defined except as
+        otherwise specified.<note>
+          <para>We need to specify whether any media type (e.g., XML) has any specialized
+            processing.</para>
+        </note></para>
+  </section>
+  <section><title>Ports</title>
+  <para>Ports are named flows of a sequence of documents.  During the execution of a pipeline, a
+        particular port will produce a specific sequence of documents.  The types and cardinality of
+        documents is often determined at runtime.</para>
+      <para>While the sequence of documents can be though of as a simple array of documents, this
+        array is not necessarily realizable until the whole pipeline has finished processing.  For
+        many ports, at any point during the execution of the pipeline, the number of documents in
+        the sequence is not know until the very end.</para>
+  </section>
+  <section>
+    <title>Readable Ports</title>
+    <para>The readable ports is an ordered list of ports accessible within a particular context.
+        Without any context, the readable ports is always the empty set.</para>
+      <para>The readable ports can be set by a port set expression that specifies an ordered list of
+        port assignment to document sequences. The sequence may be a static expression such as a
+        reference to a set of document URIs or a reference to something previously computed in the
+        flow. The result of the expression is a new set of readable ports that replaces the
+        previous.</para>
+    <para>The syntax of the port is list of assignments surround by square brackets (i.e., '[' and
+        ']'). An assignment consists of an optional name and a port value. The port value may refer
+        to in-scope port variables, ports, document sequences, or literal expressions sequences and
+        various combinations as well.</para>
+      <para>When the port name is omitted, the port assignment is bound to the position in the
+        readable ports but can not be referred to by name. The interpretation of the positional
+        readable port depends on its use.  If positional and name references are mixed, all
+        positional references must precede the first named reference.</para>
+    <para>For example, the following sets the <code>source</code> port to a port variable and
+          <code>stylesheet</code> port to a singleton document sequence:</para>
+    <programlisting>[source=$in,stylesheet="style.xsl"]</programlisting>
+      <para>When the current readable ports is non-empty, ports can be referred to by the
+          <code>port()</code> function:</para>
+      <programlisting>[source=port("result"),stylesheet="style.xsl"]</programlisting>
+    <para>An ordinal value can be used to refer to the position of the readable port:</para>
+    <programlisting>[source=port(1),stylesheet="style.xsl"]</programlisting>
+    <para>Finally, omitting all parameters is equivalent to <code>port(1)</code>:</para>
+    <programlisting>[source=port(),stylesheet="style.xsl"]</programlisting>
+    <para>A single port variable can be used as a shorthand for a port set expression that sets the
+        first port.  For example, <code>$in</code> is shorthand for <code>[$in]</code>.</para>
+    
+  </section>
+</section>
+  
 <section xml:id="step-chains">
-<title>Step Chains</title>
+<title>Chain Sequences</title>
 
-<para>A step chain is a sequence of step invocations separated by the
-chain operator (i.e., <symbol>-></symbol> or <symbol>→</symbol>
-U+2192). On the left of the chain operator is always a preceding step
-or input bindings. On the right must be a step invocation, a block
-expression, or an optional output binding.
-</para>
+<para>A chain sequence is a list of chained operations separated by the chain operator (i.e.,
+        <symbol>-></symbol> or <symbol>→</symbol> U+2192). On the left of the chain operator is
+      always an operation that produces a set of readable ports.  On the right of the chain operator
+      must be a step invocation, a block expression, or port set expression.  </para>
+    <para>The result of applying the chain operator is a new set of readable ports.  These ports are
+      the often the outputs of a expression (e.g., the output ports of a particular step
+      invocation).  A chain sequence can manipulate the readable ports by using a port set
+      expression within the chain sequence.</para>
 
-<para>The simplest input binding is a single expression that evaluates
-to a sequence of one or more items. For example, the document(s) bound
-to <varname>$in</varname> can be an input binding for the XInclude
-step:</para>
+<para>The simplest chain sequence is a single step invocation. For example, the document(s) bound to
+        <varname>$in</varname> can be chained as input to the XInclude step:</para>
 
 <programlisting>$in → xinclude()</programlisting>
+    <para>The current readable ports starts as the empty set and the expression <code>$in</code>
+      sets the first readable to port to the port variable <code>$in</code>. The chain operator
+      provides the current readable ports to the step invocation.  The step binding for xinclude()
+      defaults to bind the <code>source</code> port to the first readable port.</para>
 
-<para>If a step takes multiple inputs, the individual bindings must be
-surrounded by square brackets:</para>
+<para>Similarly, when a step takes multiple inputs, we can be more explicit with the individual
+      bindings by providing names and values for each input port within ther readable ports:</para>
+
+<programlisting>[source="document.xml", stylesheet="style.xsl"] → xslt()</programlisting>
+
+<para>If we know the order of ports needed by the chained step, we can omit the names:</para>
 
 <programlisting>["document.xml", "style.xsl"] → xslt()</programlisting>
 
-<para>In a binding with multiple inputs, the first input is bound to
-the first input port (in declaration order), the second input to the
-second port, etc. If necessary, or for clarity, a binding may be
-preceded by a name assignment that explicitly names a port:</para>
+<para>The result of applying the chain operator is a new set of readable ports regardless of the
+      expression used on the right-hand side of the operator.  This new set of readable ports
+      becomes the current readable ports for any following operator (e.g., the next chain in the
+      sequence).  This allows a chain to consist of more than one step.</para>
+    <para>A following step may implicitly use the first port of the current reabable ports and so
+      removed the need for a port set expression inbetween:</para>
+    <programlisting>$in → xinclude() → store(href="included.xml")</programlisting>
+    <para>In the above, the <code>xinclude()</code> step produces a single output.  That output is
+      made available as the only readable port to the following <code>store()</code> step.</para>
+    <para>Often, the binding of inputs for the following step can not be made implicit.  In such
+      situations, the binding can be made explict by using a port set expression:</para>
+    <programlisting>$in → xinclude() → [port("result"),"stylesheet.xsl"] → xslt()</programlisting>
+    <para>Or port name can be omitted and the output port can be referred to by order:</para>
+    <programlisting>$in → xinclude() → [port(1),"stylesheet.xsl"] → xslt()</programlisting>
+    <para>Finally, the first port can always be referred to without any argument:</para>
+    <programlisting>$in → xinclude() → [port(),"stylesheet.xsl"] → xslt()</programlisting>
+    <note><para>We could introduce a special syntax for <code>port("result")</code> (e.g.
+        <code>@result</code>).</para></note>
 
-<programlisting>[source="document.xml", stylesheet="style.xs"] → xslt()</programlisting>
-
-<para>If positional and name references are mixed, all positional
-references must precede the first named reference.</para>
-
-<para>Steps produce some number of outputs on named ports. The outputs
-of a step invocation immediately preceding the chain operator are
-available as numbered inputs <varname>$1</varname>,
-<varname>$2</varname>, etc. whose order is the order of the output
-declarations on the step. For example, the <step>xslt</step> step has
-two output ports, <output>result</output> and <port>secondary</port>,
-declared in that order. Following an <step>xslt</step> step,
-<varname>$1</varname> refers to the <output>result</output> port and
-<varname>$2</varname> refers to the <port>secondary</port>
-port.</para>
-
-<programlisting>$in → xinclude() → [$1,"stylesheet.xsl"] → xslt()</programlisting>
-
-<para>A reference to an ordinal port that does not exist produces an
-empty sequence of documents.</para>
+<para>A reference to an ordinal port that does not exist produces an empty sequence of
+      documents.</para>
 
 <note>
 <para>This is an explicit relaxation of the rules in XProc 1.0 where
@@ -547,19 +610,6 @@ sequence or because there <emphasis>was no</emphasis> third output
 port.</para>
 </note>
 
-<para>If two steps are connected together without an intervening input
-binding, the implicit input binding is that the ports are connected
-ordinally:</para>
-
-<programlisting>→ [$1,$2,$3,…$n] →</programlisting>
-
-<para>So this flow:</para>
-
-<programlisting>$in → xinclude() → store("included.xml")</programlisting>
-
-<para>is equivalent to this one:</para>
-
-<programlisting>$in → xinclude() → [$1] → store("included.xml")</programlisting>
 </section>
 
 <section xml:id="inputs">
