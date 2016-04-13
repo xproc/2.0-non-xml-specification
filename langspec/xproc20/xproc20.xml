@@ -806,7 +806,7 @@ invoked, a default namespace may be assumed by the processor.</para>
    outputs $result as document-node()?,
            $secondary as document-node()*;</programlisting>
 
-<para>All required options must be listed first in the declaration.</para>
+<para>All required options must be listed first in the declaration. </para>
 
 <para>Options values are specified on invocation. Any unnamed option
 values are matched in declaration order. Afterwards, all parameters
