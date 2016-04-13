@@ -440,10 +440,11 @@ pipeline from the XProc 1.0 specification.</para>
  inputs $source as document-node(); <co xml:id="ex-input"/>
 outputs $result as document-node(); <co xml:id="ex-output"/>
 
-$source → { if (xs:decimal($1/*/@version) &lt; 2.0) <co xml:id="ex-block"/>
-            then [$1,"v1schema.xsd"] → validate-with-xml-schema() ≫ @1 <co xml:id="ex-at-1"/>
-            else [$1,"v2schema.xsd"] → validate-with-xml-schema() ≫ @1}
-        → [$1,"stylesheet.xsl"] → xslt() <co xml:id="ex-block-output"/>
+$source → [$in,$out] { 
+            if (xs:decimal($in/*/@version) &lt; 2.0) <co xml:id="ex-block"/>
+            then [$in,"v1schema.xsd"] → validate-with-xml-schema() ≫ $out <co xml:id="ex-at-1"/>
+            else [$in,"v2schema.xsd"] → validate-with-xml-schema() ≫ $out}
+        → [port(),"stylesheet.xsl"] → xslt() <co xml:id="ex-block-output"/>
 ≫ $result <co xml:id="ex-final-output"/></programlisting>
 </example>
 
