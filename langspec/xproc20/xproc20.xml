@@ -696,43 +696,52 @@ braces.</para>
 <section xml:id="output-bindings">
 <title>Output bindings</title>
 
-<para>The output binding operator (i.e., '&gt;&gt;' or
-<literal>≫</literal> U+226B) takes a step chain or port variable
-reference on the left hand side and binds the output to the right hand
-side (i.e., a port variable reference, a URI reference, or an ordered
-port ordinal.). The output binding operator is used to construct more
-complex chains of data flows, store results, or write to output ports
-for returning results.</para>
+<para>The output binding operator (i.e., '&gt;&gt;' or <literal>≫</literal> U+226B) takes a chain
+      sequence on the left hand side and binds the output to the right hand side (e.g., a port
+      variable or a URI reference). The output binding operator is used to construct more complex
+      chains of data flows, store results, or write to output ports for returning results.</para>
 
 <para>The symbol “≫” is evocative of the “append” operation familiar
 from many command-line systems. An output binding appends data to its
 right hand side in the sense that it causes data to be sent there and
 if several chains cause data to be sent to the same place, the effect
 will be logical appending.</para>
+    <para>The output binding reads from the current readable ports from the left-hand side of the
+      expression. Each expression on the right-hand side must use one of the port names or the order
+      of the port.</para>
+    <para>When a port variable is the target of the output binding operator, the append effectively
+      copies the sequence of documents, as they occur, from the identified port to the port
+      variable.</para>
 
-<para>The identity assignment is performed by simply binding the input
-to the output:</para>
+<para>For example, the identity assignment is performed by simply binding the input to the
+      output:</para>
 
 <programlisting>$in ≫ $out</programlisting>
 
-<para>The result is all the input on <varname>$in</varname> is sent to
-the output port <varname>$out</varname> as it flows through the
-graph.</para>
+<para>The expression on the left makes all the documents of the port variable <code>$in</code>
+      available on the first readable port. Those results are appended to the port variable
+        <varname>$out</varname> as they occur during processing through the flow.</para>
 
 <para>A literal URI reference implies a document store:</para>
 
 <programlisting>"doc.xml" → xinclude() ≫ "included.xml"</programlisting>
 
-<para>In the case of implicit store, if the same output URI is used
-more than once, the result of sending a sequence there is
-implementation defined (e.g., the last document written).</para>
-
-<para>If the outputs need to be referenced as inputs elsewhere, they
-can be assigned to variables:</para>
+<para>In the case of implicit store, if the same output URI is used more than once, the result of
+      sending a sequence of documents is the concatenation of the sequence.</para>
+    <para>When more than one port needs to be bound or a particular port needs to be referred to by
+      name, the right-side of the operator takes a list contained in square brackets.  This list is
+      a sequence of port variables, URI literals, or named bindings.</para>
+    <para>For example, the following appends A and B to files and C to a port variable:</para>
+  <programlisting>[A="x.json",B="y.json",C="z.json"] ≫ [A : "a.json",B : "b.json", C : $out]</programlisting>
+  <para>The port names can be omitted when the position of the readable ports is known:</para>
+  <programlisting>[A="x.json",B="y.json",C="z.json"] ≫ ["a.json","b.json", $out]</programlisting>
+  
+<para>If the outputs need to be referenced as inputs elsewhere, they can be assigned to port
+      variables:</para>
 
 <programlisting>$in → xinclude() ≫ $included
 [$included,"schema.xsd"] → validate-with-xml-schema()
-[$included,"stylesheet.xsl"] → xslt() ≫ [result=$out,secondary=$chunks]</programlisting>
+[$included,"stylesheet.xsl"] → xslt() ≫ [result : $out,secondary : $chunks]</programlisting>
 
 <para>Variables assigned in this way can be used like any other
 variable in expressions, but the implementation must enforce the
@@ -766,30 +775,6 @@ passed to <literal>validate-with-xml-schema()</literal> when the
 <emphasis>must</emphasis> be all of the documents written by the first
 chain followed by all of the documents written by the second, or vice
 versa.</para>
-
-<para>The names of output ports can be omitted in which case the
-assignments are taken in declaration order. For example, the XSLT step
-declares the <output>result</output> port first and the
-<port>secondary</port> port second. An explicit set of
-bindings:</para>
-
-<programlisting>[source=$in,stylesheet="stylesheet.xsl"] → xslt() ≫ [result=$out,secondary=$chunks]</programlisting>
-
-<para>can be shortened to:</para>
-
-<programlisting>[$in,"stylesheet.xsl"] → xslt() ≫ [$out,$chunks]</programlisting>
-
-<para>Within any context, every declared output port has an unnamed
-ordinal. Some expressions (e.g. block expressions) have implicitly
-declared output ports.</para>
-
-<para>The ordinals can be referenced by name as <literal>@1</literal>,
-<literal>@2</literal>, etc.</para>
-
-<programlisting>$in → { if ($1/doc/cheese='cheddar')
-        then consume() ≫ @1
-        else reject() ≫ @1 }
-     ≫ $out</programlisting>
 
 </section>
 
