@@ -565,7 +565,7 @@ the <varname>$result</varname> output.
       defaults to bind the <code>source</code> port to the first readable port.</para>
 
 <para>Similarly, when a step takes multiple inputs, we can be more explicit with the individual
-      bindings by providing names and values for each input port within ther readable ports:</para>
+      bindings by providing names and values for each input port within the readable ports:</para>
 
 <programlisting>[source="document.xml", stylesheet="style.xsl"] → xslt()</programlisting>
 
@@ -577,13 +577,13 @@ the <varname>$result</varname> output.
       expression used on the right-hand side of the operator.  This new set of readable ports
       becomes the current readable ports for any following operator (e.g., the next chain in the
       sequence).  This allows a chain to consist of more than one step.</para>
-    <para>A following step may implicitly use the first port of the current reabable ports and so
-      removed the need for a port set expression inbetween:</para>
+    <para>A following step may implicitly use the first port of the current readable ports and so
+      removed the need for a port set expression in between:</para>
     <programlisting>$in → xinclude() → store(href="included.xml")</programlisting>
     <para>In the above, the <code>xinclude()</code> step produces a single output.  That output is
       made available as the only readable port to the following <code>store()</code> step.</para>
-    <para>Often, the binding of inputs for the following step can not be made implicit.  In such
-      situations, the binding can be made explict by using a port set expression:</para>
+    <para>Often, the binding of inputs for the following step can not be made implicit. In such
+      situations, the binding can be made explicit by using a port set expression:</para>
     <programlisting>$in → xinclude() → [port("result"),"stylesheet.xsl"] → xslt()</programlisting>
     <para>Or port name can be omitted and the output port can be referred to by order:</para>
     <programlisting>$in → xinclude() → [port(1),"stylesheet.xsl"] → xslt()</programlisting>
@@ -759,7 +759,7 @@ adjacent in the resulting sequence and must be in the order written by
 the ultimate step in that chain.</para>
 </listitem>
 <listitem>
-<para>Any referencial circularity raises a static error</para>
+<para>Any referential circularity raises a static error</para>
 </listitem>
 </orderedlist>
 <para>For example, the following has two documents flowing through
